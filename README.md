@@ -21,6 +21,7 @@
   - [Resource mgmt](#Resource-mgmt)
     - [DynamoDB mgmt](#DynamoDB-mgmt)
     - [S3 bucket mgmt](#S3-bucket-mgmt)
+    - [Cognito mgmt](#Cognito-mgmt)
   - [IAM mgmt](#IAM-mgmt)
   - [Lambda Packaging](#Lambda-Packaging)
   - [Lambda Layers](#Lambda-Layers)
@@ -62,7 +63,7 @@
   - 경로 ([AWS Documetation: 구성 및 자격 증명 파일](https://docs.aws.amazon.com/ko_kr/cli/latest/userguide/cli-configure-files.html))
     - **macOS** : `/Users/${사용자아이디}/.aws/credentials`
     - **Windows** : `%UserProfile%\.aws/credentials`
-  - example (**.aws/credentials**, [참고-AWS Documetation: 명명된 프로필](https://docs.aws.amazon.com/ko_kr/cli/latest/userguide/cli-configure-profiles.html)) 
+  - Example (**.aws/credentials**, [참고-AWS Documetation: 명명된 프로필](https://docs.aws.amazon.com/ko_kr/cli/latest/userguide/cli-configure-profiles.html)) 
     ```
     [geoseong] # <- serverless cli의 --aws-profile 플래그의 이름
     aws_access_key_id = #########
@@ -78,7 +79,7 @@
 - 참고
   - [Serverless Documentation: Recursively reference properties](https://serverless.com/framework/docs/providers/aws/guide/variables#recursively-reference-properties)
 
-- Example
+- Configuration
   ```yaml
   ## serverless.yml
   provider:
@@ -98,7 +99,7 @@
 - 참고
   - [AWS | Env Variables Example](https://serverless.com/examples/aws-node-env-variables/)
 
-- Example
+- Configuration
   ```yaml
   ## serverless.yml
   provider:
@@ -140,22 +141,178 @@
   - [Serverless Documentation: AWS - Events](https://serverless.com/framework/docs/providers/aws/guide/events/)
   - [Serverless Documentation: AWS - Functions](https://serverless.com/framework/docs/providers/aws/guide/functions/)
 
+- yml 옵션
+  - `functions:` Lambda Functions
+  - `events:` [Serverless AWS Lambda Events](https://serverless.com/framework/docs/providers/aws/events/)
+    - API Gateway
+    - Websocket
+    - Kinesis & DynamoDB
+    - S3
+    - Schedule
+    - SNS
+    - SQS
+    - Application Load Balancer
+    - Alexa Skill
+    - Alexa Smart Home
+    - IoT
+    - CloudWatch Event
+    - CloudWatch Log
+    - Cognito User Pool
+
+- Configuration
+  ```yaml
+  ## serverless.yml
+  functions:  # <- Lambda Functions
+    hello:
+      handler: handler.hello
+      events:
+        - schedule: rate(10 minutes)  # <- CloudWatch Event
+        - http: # <- API Gateway
+            path: hello
+            method: get
+  ```
+
+- [Enabling CORS](https://serverless.com/framework/docs/providers/aws/events/apigateway#enabling-cors)
+  ```yaml
+  ## serverless.yml
+    functions:  # <- Lambda Functions
+      hello:
+        handler: handler.hello
+        events:
+          - schedule: rate(10 minutes)  # <- CloudWatch Event
+          - http: # <- API Gateway
+              path: hello
+              method: get
+        cors: true # <- CORS Configuration Default
+        # cors: # <- CORS Configuration Advanced
+        #   origin: '*'
+        #   headers:
+        #     - Content-Type
+        #     - X-Amz-Date
+        #     - Authorization
+        #     - X-Api-Key
+        #     - X-Amz-Security-Token
+        #     - X-Amz-User-Agent
+        #   allowCredentials: false
+  ```
+
 
 ## Plugins
 ### Serverless-offline plugin
+- 참고
+  - [serverless offline](https://github.com/dherault/serverless-offline)
+
+- Installation
+  ```
+  $ sls plugin install -n serverless-offline
+  ```
+
+- Configuration
+  ```yaml
+  ## serverless.yml
+  custom:
+    serverless-offline:
+      httpsProtocol: "dev-certs"
+      port: 4000
+
+  ...
+
+  plugins:
+    - serverless-offline  # <- Plugin install 이후 자동으로 생성되어 있음
+  ```
+
+- Running
+  ```
+  $ sls offline start
+  ```
+
+- Tip
+  1. VSCode에서 디버그 탭을 들어가서 `launch.json`을 만들어서 디버깅 설정을 한 후
+  1. 디버깅하고자 하는 js파일에 breakpoint를 찍고,
+  1. 좌측 상단 DEBUG버튼 옆 `재생`버튼을 누르면 하단의 `DEBUG CONSOLE`에서 디버깅 상태를 모니터링 할 수 있으며,
+  1. Function 실행 시 breakpoint가 걸리는 것을 확인 할 수 있다.
+  
+  <p style="margin-left: 1rem;">
+    <img src="https://code.visualstudio.com/assets/docs/editor/debugging/debugicon.png" width="100" />
+    <img src="https://code.visualstudio.com/assets/docs/editor/debugging/launch-configuration.png" width="300" />
+    <img src="https://code.visualstudio.com/assets/docs/editor/debugging/debug-environments.png" width="300" />
+  </p>
+  
+  - `launch.json`
+    ```json
+    {
+      "version": "0.2.0",
+      "configurations": [
+        {
+          "type": "node",
+          "request": "launch",
+          "name": "sls offline(local)",
+          /* "$ which serverless"에서 리턴되는 경로 (macOS기준.) */
+          /* "$ DEBUG=true sls offline start" 와 같다. */
+          "program": "/Users/${username}/.npm-packages/bin/sls", 
+          "args": [
+            "offline",
+            "start",
+            "-l",
+            "backend"
+          ],
+          "env": {
+            "DEBUG": "true"
+          }
+        },
+      ]
+    }
+    ```
+
+  <p style="margin-left: 1rem;">
+    <img src="https://code.visualstudio.com/assets/docs/editor/debugging/debug-session.png" />
+  </p>
+
+
 ### tracing plugin: X-Ray
+- 참고
+  - [Serverless Documentation: AWS - Functions -> X-Ray Tracing](https://serverless.com/framework/docs/providers/aws/guide/functions#aws-x-ray-tracing)
+- Configuration
+  - 모든 lambda 혹은 apiGateway에 전역으로 설정도 가능하고,
+  - 전역설정에 덮어쓰기로 특정 Function에 옵션을 넣어서 덮어쓰는것도 가능하다
+    ```yaml
+    provider:
+      tracing:
+        apiGateway: true
+        lambda: true
+    ```
+    or
+    ```yaml
+    functions:
+      hello:
+        handler: handler.hello
+        tracing: Active
+      goodbye:
+        handler: handler.goodbye
+        tracing: PassThrough
+    ```
+
 ### Dynamodb offline plugin
   - simulating page
+
+
 ### pseudo-parameters plugin: CloudFormation Syntax
 
 
 ## Resource mgmt
+- 참고
+  - [Serverless Documentation: AWS - Resources](https://serverless.com/framework/docs/providers/aws/guide/resources)
+
+
 ### DynamoDB mgmt
 - 참고
   - [Serverless REST API with DynamoDB and offline support](https://github.com/serverless/examples/tree/master/aws-node-rest-api-with-dynamodb-and-offline)
 
 
 ### S3 bucket mgmt
+
+
+### Cognito mgmt
 
 
 ## IAM mgmt
