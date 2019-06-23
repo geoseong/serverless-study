@@ -12,7 +12,8 @@
   - [Variable mgmt](#Variable-mgmt)
     - [Recursively reference properties](#Recursively-reference-properties)
     - [Environment variable mgmt](#Environment-variable-mgmt)
-  - [Lambda Functions with API Gateway and CloudWatch Events](#Lambda-Functions-with-API-Gateway-and-CloudWatch-Events)
+  - [Functions with Events](#Functions-with-Events)
+  - [X-Ray Tracing](#X-Ray-Tracing)
   - [Plugins](#Plugins)
     - [Serverless-offline plugin](#Serverless-offline-plugin)
     - [tracing plugin: X-Ray](#tracing-plugin-X-Ray)
@@ -42,7 +43,8 @@
 - Introducing serverless framework (2019.06.17 webinar)
   - [Webinar - Getting started with the serverless framework](https://www.youtube.com/watch?v=LXB2Nv9ygQc)
 - Serverless Framework: AWS Quick Start
-  - [AWS Quick Start](https://serverless.com/framework/docs/providers/aws/guide/quick-start/)
+  - [Serverless Documentation: AWS Quick Start](https://serverless.com/framework/docs/providers/aws/guide/quick-start/)
+  - [Serverless Framework with Node.js](docs/serverless_framework.md)
 - AWS ARN & NAMESPACE
   - [Amazon 리소스 이름(ARN) 및 AWS 서비스 네임스페이스](https://docs.aws.amazon.com/ko_kr/general/latest/gr/aws-arns-and-namespaces.html)
 
@@ -136,7 +138,7 @@
   ```
 
 
-## Lambda Functions with API Gateway and CloudWatch Events
+## Functions with Events
 - 참고
   - [Serverless Documentation: AWS - Events](https://serverless.com/framework/docs/providers/aws/guide/events/)
   - [Serverless Documentation: AWS - Functions](https://serverless.com/framework/docs/providers/aws/guide/functions/)
@@ -175,12 +177,20 @@
 - [Enabling CORS](https://serverless.com/framework/docs/providers/aws/events/apigateway#enabling-cors)
   ```yaml
   ## serverless.yml
+  provider:
+    name: aws
+    runtime: nodejs8.10
+    stage: ${opt:stage, 'dev'}
+    region: ap-northeast-2
+    tracing:  # <- X-Ray configuration: 모든 API Gateway와 Lambda functions에 X-ray tracing을 하는 옵션
+      apiGateway: true
+      lambda: true
     functions:  # <- Lambda Functions
       hello:
         handler: handler.hello
         events:
-          - schedule: rate(10 minutes)  # <- CloudWatch Event
-          - http: # <- API Gateway
+          - schedule: rate(10 minutes)  # <- CloudWatch Event: 10분마다 반복실행하겠다
+          - http: # <- API Gateway Event
               path: hello
               method: get
         cors: true # <- CORS Configuration Default
@@ -195,6 +205,32 @@
         #     - X-Amz-User-Agent
         #   allowCredentials: false
   ```
+
+
+## X-Ray Tracing
+- 참고
+  - [Serverless Blog: Serverless Framework v1.41 - X-Ray for API Gateway, Invoke Local with Docker Improvements & More](https://serverless.com/blog/framework-release-v141/)
+  - [Serverless Documentation: AWS - Functions -> X-Ray Tracing](https://serverless.com/framework/docs/providers/aws/guide/functions#aws-x-ray-tracing)
+  - [Serverless Documentation: AWS - Events -> X-Ray Tracing](https://serverless.com/framework/docs/providers/aws/events/apigateway#aws-x-ray-tracing)
+- Configuration
+  - 모든 lambda 혹은 apiGateway에 전역으로 설정도 가능하고,
+  - 전역설정에 덮어쓰기로 특정 Function에 옵션을 넣는 것도 가능하다
+    ```yaml
+    provider:  # <- X-Ray configuration: 모든 API Gateway와 Lambda functions에 X-ray tracing을 하는 옵션
+      tracing:
+        apiGateway: true
+        lambda: true
+    ```
+    or
+    ```yaml
+    functions:
+      hello:
+        handler: handler.hello
+        tracing: Active   # <- X-Ray configuration: 특정 Function에 X-ray tracing 옵션 적용 가능
+      goodbye:
+        handler: handler.goodbye
+        tracing: PassThrough  # <- X-Ray configuration: 특정 Function에 X-ray tracing 옵션 적용 가능
+    ```
 
 
 ## Plugins
@@ -228,9 +264,9 @@
 
 - Tip
   1. VSCode에서 디버그 탭을 들어가서 `launch.json`을 만들어서 디버깅 설정을 한 후
-  1. 디버깅하고자 하는 js파일에 breakpoint를 찍고,
-  1. 좌측 상단 DEBUG버튼 옆 `재생`버튼을 누르면 하단의 `DEBUG CONSOLE`에서 디버깅 상태를 모니터링 할 수 있으며,
-  1. Function 실행 시 breakpoint가 걸리는 것을 확인 할 수 있다.
+  2. 디버깅하고자 하는 js파일에 breakpoint를 찍고,
+  3. 좌측 상단 DEBUG버튼 옆 `재생`버튼을 누르면 하단의 `DEBUG CONSOLE`에서 디버깅 상태를 모니터링 할 수 있으며,
+  4. Function 실행 시 breakpoint가 걸리는 것을 확인 할 수 있다.
   
   <p style="margin-left: 1rem;">
     <img src="https://code.visualstudio.com/assets/docs/editor/debugging/debugicon.png" width="100" />
@@ -253,12 +289,13 @@
           "args": [
             "offline",
             "start",
-            "-l",
-            "backend"
           ],
           "env": {
             "DEBUG": "true"
-          }
+          },
+          /* cwd: 해당 스크립트를 실행하는 폴더경로를 지정할 수 있는 옵션이다. */
+          /* serverless offline plugin이 설치되어 있는 경로는 ./backend폴더 뿐이므로 backend폴더에서 시작하게 했다. */
+          "cwd": "${workspaceFolder}/backend"
         },
       ]
     }
@@ -270,27 +307,8 @@
 
 
 ### tracing plugin: X-Ray
-- 참고
-  - [Serverless Documentation: AWS - Functions -> X-Ray Tracing](https://serverless.com/framework/docs/providers/aws/guide/functions#aws-x-ray-tracing)
-- Configuration
-  - 모든 lambda 혹은 apiGateway에 전역으로 설정도 가능하고,
-  - 전역설정에 덮어쓰기로 특정 Function에 옵션을 넣어서 덮어쓰는것도 가능하다
-    ```yaml
-    provider:
-      tracing:
-        apiGateway: true
-        lambda: true
-    ```
-    or
-    ```yaml
-    functions:
-      hello:
-        handler: handler.hello
-        tracing: Active
-      goodbye:
-        handler: handler.goodbye
-        tracing: PassThrough
-    ```
+- 필요 없을 수도...
+
 
 ### Dynamodb offline plugin
   - simulating page

@@ -1,0 +1,14 @@
+{
+  "name": "gudi-backend",
+  "description": "",
+  "version": "0.1.0",
+  "dependencies": {},
+  "scripts": {
+    "debug": "sls offline start",
+    "deploy": "sls deploy --aws-profile 404hunter-geoseong --verbose"
+  },
+  "devDependencies": {
+    "serverless": "^1.45.1",
+    "serverless-offline": "^5.4.4"
+  }
+}
