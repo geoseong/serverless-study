@@ -168,8 +168,8 @@
     hello:
       handler: handler.hello
       events:
-        - schedule: rate(10 minutes)  # <- CloudWatch Event
-        - http: # <- API Gateway
+        - schedule: rate(10 minutes)  # <- CloudWatch Event: 10분마다 반복실행하겠다
+        - http: # <- API Gateway Event
             path: hello
             method: get
   ```
@@ -275,6 +275,12 @@
   </p>
   
   - `launch.json`
+    - **`program`**:
+      - `$ which serverless`에서 리턴되는 경로 (macOS기준.), `$ DEBUG=true sls offline start` 와 같다.
+    - **`cwd`**:
+      - 해당 스크립트를 실행하는 폴더경로를 지정할 수 있는 옵션이다.
+      - serverless offline plugin이 설치되어 있는 경로는 ./backend폴더 뿐이므로 backend폴더에서 시작하게 했다. */
+          
     ```json
     {
       "version": "0.2.0",
@@ -283,8 +289,6 @@
           "type": "node",
           "request": "launch",
           "name": "sls offline(local)",
-          /* "$ which serverless"에서 리턴되는 경로 (macOS기준.) */
-          /* "$ DEBUG=true sls offline start" 와 같다. */
           "program": "/Users/${username}/.npm-packages/bin/sls", 
           "args": [
             "offline",
@@ -293,8 +297,6 @@
           "env": {
             "DEBUG": "true"
           },
-          /* cwd: 해당 스크립트를 실행하는 폴더경로를 지정할 수 있는 옵션이다. */
-          /* serverless offline plugin이 설치되어 있는 경로는 ./backend폴더 뿐이므로 backend폴더에서 시작하게 했다. */
           "cwd": "${workspaceFolder}/backend"
         },
       ]
