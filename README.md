@@ -432,21 +432,25 @@ custom:
 - 참고
   - [Serverless REST API with DynamoDB and offline support](https://github.com/serverless/examples/tree/master/aws-node-rest-api-with-dynamodb-and-offline)
   ```yaml
-  resources:  # CloudFormation template syntax
+  resources:
     Resources:
-      usersTable:
-        Type: AWS::DynamoDB::Table
+      TodosDynamoDbTable:
+        Type: 'AWS::DynamoDB::Table'
+        DeletionPolicy: Retain
         Properties:
-          TableName: usersTable
           AttributeDefinitions:
-            - AttributeName: email
+            -
+              AttributeName: id
               AttributeType: S
           KeySchema:
-            - AttributeName: email
+            -
+              AttributeName: id
               KeyType: HASH
           ProvisionedThroughput:
             ReadCapacityUnits: 1
             WriteCapacityUnits: 1
+          TableName: ${self:provider.environment.DYNAMODB_TABLE}
+
   ```
 
 ### S3 bucket mgmt
@@ -511,18 +515,21 @@ custom:
 // TODO: clone해서 실습해 보기
 - 참고
   - [Serverless AWS Cognito Custom User Pool Example](https://github.com/bsdkurt/aws-node-custom-user-pool)
+  - [Aws Lambda, Amazon Api Gateway, S3, Dynamodb And Cognito Example](https://github.com/andreivmaksimov/serverless-framework-aws-lambda-amazon-api-gateway-s3-dynamodb-and-cognito)
   ```yaml
-  WildRydesCognitoUserPool:
-    Type: AWS::Cognito::UserPool
-    Properties:
-      UserPoolName: WildRydes
-  WildRydesCognitoUserPoolClient:
-    Type: AWS::Cognito::UserPoolClient
-    Properties:
-      ClientName: WildRydesWebApp
-      GenerateSecret: false
-      UserPoolId:
-        Ref: "WildRydesCognitoUserPool"
+  resources:
+    Resources:
+      WildRydesCognitoUserPool:
+        Type: AWS::Cognito::UserPool
+        Properties:
+          UserPoolName: WildRydes
+      WildRydesCognitoUserPoolClient:
+        Type: AWS::Cognito::UserPoolClient
+        Properties:
+          ClientName: WildRydesWebApp
+          GenerateSecret: false
+          UserPoolId:
+            Ref: "WildRydesCognitoUserPool"
   ```
   
 
@@ -650,7 +657,10 @@ $ serverless package --package done/isaid -> `done/isaid`폴더 안에 배포 �
     - Lambda의 코드 파일들은 `/var/task` 폴더 안에 저장되어 있음.
 
 ## Lambda Layers
-
+// TODO: clone받아 실습하기
+- 참고
+  - [AWS FFmepg Layer & a service using it to create GIFs](https://github.com/serverless/examples/tree/master/aws-ffmpeg-layer)
+  - [FooBar: Lambda Layers Test](https://github.com/mavi888/layers-test/blob/master/serverless.yml)
 
 ## Deploying
 - 참고
