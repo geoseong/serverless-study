@@ -1,7 +1,6 @@
 # Managing AWS services with 'serverless framework'
 
 ## Table of Contents
-(- EC2 instance mgmt - VPC plugin usage & Security group mgmt)
 - [Managing AWS services with 'serverless framework'](#Managing-AWS-services-with-serverless-framework)
   - [Table of Contents](#Table-of-Contents)
   - [Presentation](#Presentation)
@@ -19,18 +18,21 @@
     - [tracing plugin: X-Ray](#tracing-plugin-X-Ray)
     - [Dynamodb offline plugin](#Dynamodb-offline-plugin)
     - [pseudo-parameters plugin: CloudFormation Syntax](#pseudo-parameters-plugin-CloudFormation-Syntax)
+    - [serverless-vpc-plugin](#serverless-vpc-plugin)
   - [Resource mgmt](#Resource-mgmt)
     - [DynamoDB mgmt](#DynamoDB-mgmt)
     - [S3 bucket mgmt](#S3-bucket-mgmt)
     - [Cognito mgmt](#Cognito-mgmt)
   - [IAM mgmt](#IAM-mgmt)
   - [Lambda Packaging](#Lambda-Packaging)
+    - [CLI command](#CLI-command)
+    - [yml Configuration](#yml-Configuration)
   - [Lambda Layers](#Lambda-Layers)
   - [Deploying](#Deploying)
   - [View Logging](#View-Logging)
   - [Clearing](#Clearing)
   - [Tips](#Tips)
-    - ["CloudFormation way of rollback fail ignore"](#%22CloudFormation-way-of-rollback-fail-ignore%22)
+    - [CloudFormation: UPDATE_ROLLBACK_FAILED](#CloudFormation-UPDATEROLLBACKFAILED)
 
 
 ## Presentation
@@ -205,7 +207,23 @@
         #     - X-Amz-User-Agent
         #   allowCredentials: false
   ```
+- [VPC Configuration](https://serverless.com/framework/docs/providers/aws/guide/functions#vpc-configuration)
+  ```yaml
+  # serverless.yml
+  service: service-name
+  provider: aws
 
+  functions:
+    hello:
+      handler: handler.hello
+      vpc:
+        securityGroupIds:
+          - securityGroupId1
+          - securityGroupId2
+        subnetIds:
+          - subnetId1
+          - subnetId2
+  ```
 
 ## X-Ray Tracing
 - 참고
@@ -319,6 +337,68 @@
 ### pseudo-parameters plugin: CloudFormation Syntax
 
 
+### serverless-vpc-plugin
+- [smoketurner/serverless-vpc-plugin](https://github.com/smoketurner/serverless-vpc-plugin#readme)
+- // TODO: 다른 functions, Resources와 함께 구성 시 deploy할 때마다 VPC를 새로 만드는 지 확인을 해 볼 것
+```yaml
+# add in your serverless.yml
+
+plugins:
+  - serverless-vpc-plugin
+
+provider:
+  # you do not need to provide the "vpc" section as this plugin will populate it automatically
+  vpc:
+    securityGroupIds:
+      -  # plugin will add LambdaExecutionSecurityGroup to this list
+    subnetIds:
+      -  # plugin will add the "Application" subnets to this list
+
+custom:
+  vpcConfig:
+    cidrBlock: '10.0.0.0/16'
+
+    # if createNatGateway is a boolean "true", a NAT Gateway and EIP will be provisioned in each zone
+    # if createNatGateway is a number, that number of NAT Gateways will be provisioned
+    createNatGateway: 2
+
+    # When enabled, the DB subnet will only be accessible from the Application subnet
+    # Both the Public and Application subnets will be accessible from 0.0.0.0/0
+    createNetworkAcl: false
+
+    # Whether to create the DB subnet
+    createDbSubnet: true
+
+    # Whether to enable VPC flow logging to an S3 bucket
+    createFlowLogs: false
+
+    # Whether to create a bastion host
+    createBastionHost: false
+    bastionHostKeyName: MyKey # required if creating a bastion host
+
+    # Whether to create a NAT instance
+    createNatInstance: false
+
+    # Optionally specify AZs (defaults to auto-discover all availabile AZs)
+    zones:
+      - us-east-1a
+      - us-east-1b
+      - us-east-1c
+
+    # By default, S3 and DynamoDB endpoints will be available within the VPC
+    # see https://docs.aws.amazon.com/vpc/latest/userguide/vpc-endpoints.html
+    # for a list of available service endpoints to provision within the VPC
+    # (varies per region)
+    services:
+      - kms
+      - secretsmanager
+
+    # Optionally specify subnet groups to create. If not provided, subnet groups
+    # for RDS, Redshift, ElasticCache and DAX will be provisioned.
+    subnetGroups:
+      - rds
+```
+
 ## Resource mgmt
 - 참고
   - [Serverless Documentation: AWS - Resources](https://serverless.com/framework/docs/providers/aws/guide/resources)
@@ -341,16 +421,177 @@
 
 
 ## Lambda Packaging
+- 참고
+  - [Serverless Documentation: Packaging](https://serverless.com/framework/docs/providers/aws/guide/packaging/)
+### CLI command
+AWS Lambda function에 배포될 파일구조를 미리 볼 수 있다.
+```
+$ serverless package
+```
+- `.serverless` 폴더 안에 배포될 파일들이 저장된다
 
+```
+$ serverless package --package done -> `done`폴더 안에 배포 파일들 저장
+$ serverless package --package done/isaid -> `done/isaid`폴더 안에 배포 파일들 저장
+```
+- `--package` 플래그를 붙이면 사용자가 직접 경로를 지정할 수 있다.
+
+### yml Configuration
+- **`include`** / **`exclude`**
+  - 배포 시 포함되어야 할 것과 포함되어야 하지 말아야 할 것을 지정할 수 있다.
+  - **exclude 안 해도 기본적으로 제외되는 파일 리스트들**
+    - .git/**
+    - .gitignore
+    - .DS_Store
+    - npm-debug.log
+    - .serverless/**
+    - .serverless_plugins/**
+  ```yaml
+  package:
+    exclude:  # node_modules 하위폴더를 제외하지만 node_modules/node-fetch/ 는 다시 포함시킨다
+      - node_modules/**
+      - '!node_modules/node-fetch/**'
+  ```
+  ```yaml
+  package:  # src 하위폴더를 제외하고 src/function/handler.js은 포함시킨다.
+    exclude:
+      - src/**
+    include:
+      - src/function/handler.js
+  ```
+- **`individually`**
+  - 기본적으로는 yml파일에 구성되어 있는 function 전체가 통으로 옵션이 먹지만,
+  - `individually: true` 옵션으로 function 개별 설정도 가능하다.
+    - 가장 상위에 두면 모든 function들이 개별설정하도록 적용
+    - functions 안에 두면
+  ```yaml
+  package:
+    individually: true
+    exclude:
+      - functions/**
+
+  functions:
+    hello:
+      handler: functions/hello.index
+      package:
+        include:
+          - functions/hello.js
+    bye:
+      handler: functions/bye.index
+      package:
+        include:
+          - functions/bye.js
+  ```
+  ```yaml
+  functions:
+    hello:
+      handler: functions/hello.
+    bye:
+      handler: functions/bye.index
+      package:
+        individually: true
+  ```
+- **`excludeDevDependencies`**
+    - devDependency가 제외 되는것을 원치 않을 때 사용
+    ```yaml
+    package:
+      excludeDevDependencies: false
+    ```
+- **`artifact`**
+  - 이미 packaging이 되어 있는 다른 package를 사용하고자 할 때 사용
+  - 이 옵션이 설정되어 있으면 배포 시 별도로 packaging단계를 거치지 않는다
+  - AWS S3의 경로도 지정 가능함
+    - [ ] 그러나 실패하고 있음
+  - 실습을 위해 `$ cd backend && sls package --package done` 을 해서 `done/hello.zip` 압축파일을 만든다.
+  - 전역으로 설정하는 방법
+  ```yaml
+  package:
+    artifact: done/hello.zip
+  ```
+  - 개별 설정하는 방법
+  ```yaml
+  package:
+    individually: true
+
+  functions:
+    hello:
+      handler: functions/hello.index  # hello.zip안의 functions폴더 안에 있는 hello.js
+    package:
+      artifact: done/hello.zip
+    events:
+      - http:
+          path: hello
+          method: get
+  ```
+  - 참고
+    - Lambda의 코드 파일들은 `/var/task` 폴더 안에 저장되어 있음.
 
 ## Lambda Layers
 
 
 ## Deploying
+- 참고
+  - [Serverless Documentation: Deploying](https://serverless.com/framework/docs/providers/aws/guide/deploying/)
+- 작동원리
+  1. CloudFormation 스택이 생성되지 않았다면, S3 버킷을 새로 생성해서 그 안에 소스코드들이 압축된 zip파일을 넣는다.
+  2. 배포 시 기존에 배포되어있는 내용과 로컬의 배포될 내용이 같다면 배포절차를 중단한다.
+  3. Zip files of your Functions' code are uploaded to your Code S3 Bucket.
+  4. 정의된 IAM Roles, Functions, Events and Resources들이 AWS CloudFormation template으로 추가된다
+  5. The CloudFormation Stack 동명의 새로운 template으로 업데이트된다.
+  6. function들은 배포될때마다 새로운 버전이 생긴다.
+- `serverless.yml`에 설정된 것 모두 배포하기
+  ```
+  $ serverless deploy
+  ```
+- `--verbose`: 배포 시 CloudFormation Stack에서 출력하는 이벤트를 확인하고 싶다면..
+  ```
+  $ serverless deploy --verbose
+  ```
+- `--stage`, `--region` 플래그로 stage명과 region변경 가능
+  ```
+  $ serverless deploy --stage production --region eu-central-1
+  ```
+- `function --function`: 특정 function만 지정해서 개별배포 가능
+  ```
+  $ serverless deploy function --function myFunction
+  ```
+- `--aws-profile`: 내 로컬에 복수개의 AWS profile이 있다면, `.aws/credentials`에 있는 profile 이름을 지정하여 배포하고자 하는 계정 지정 가능
+  ```
+  $ serverless deploy deploy --aws-profile myProfile
+  ```
+- `--package`
+  - 배포 대상을 `$ serverless package`를 통해 packaging된 폴더 경로를 지정해서 배포
+  ```
+  $ serverless deploy --package path-to-package
+  ```
+
 ## View Logging
-  - sls logs -f {functionName} --stage {stageName} --aws-profile {profileName}
+  ```
+  sls logs -f {functionName} --stage {stageName} --aws-profile {profileName}
+  ```
+
 ## Clearing
+- 참고
+  - [Serverless Documentation: Removal](https://serverless.com/framework/docs/providers/aws/guide/services#removal)
+  ```
+  $ serverless remove -v
+  ```
 
 ## Tips
-### "CloudFormation way of rollback fail ignore"
-
+### CloudFormation: UPDATE_ROLLBACK_FAILED
+> 문제가 되는 리소스의 Logical ID를 입력해서 무시하자
+- **문제발견**
+  - `$ serverless deploy` 중에 `UPDATE_ROLLBACK_FAILED` Status가 나오는 경우 발견
+- **원인**
+  - 존재하지 않는 Lambda Layer 버전을 Lambda에서 참고하려고 해서 에러가 뜨는 문제였는데
+	- 실패하고 있는 Stack에서 `Resources` 탭을 누르면, 표가 나온다.
+  	- [이미지첨부]
+	- 나오는 표에서 `Logical ID`라고 되어 있는 부분을 유심히 본다.
+    - [이미지첨부]
+	- 그래서 잘못된 Lambda Layer를 바라보는 Lambda Function에 해당되는 `Logical ID` 혹은 다수개의 Logical ID들을 모아서 **`콤마(,)`를 중간에 붙여** 리스트를 완성했다.
+		- Ex) FrontendRootLambdaFunction,FrontendAdminLambdaFunction
+	- 이제 상단의 `Actions`메뉴를 펼친 뒤 `Coutinue Update Rollback`을 누른다.
+  	- [이미지첨부]
+	- 그럼 모달창이 뜨는데, 거기서 `Advanced`를 눌러서 펼쳐본다.
+  	- [이미지첨부]
+	- 펼쳐서 나오는 텍스트입력란에 `Logical ID`들을 콤마로 붙인 리스트를 붙여넣고 `Continue(?였나?)` 버튼을 누르면 그에 해당하는 리소스들은 **update rollback 리스트에서 제거**되면서 `UPDATE_ROLLBACK_COMPLETE` 가 뜬 것을 확인 할 수 있었다.
