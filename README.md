@@ -24,6 +24,8 @@
     - [S3 bucket mgmt](#S3-bucket-mgmt)
     - [Cognito mgmt](#Cognito-mgmt)
   - [IAM mgmt](#IAM-mgmt)
+    - [The Default IAM Role](#The-Default-IAM-Role)
+    - [Custom IAM](#Custom-IAM)
   - [Lambda Packaging](#Lambda-Packaging)
     - [CLI command](#CLI-command)
     - [yml Configuration](#yml-Configuration)
@@ -39,7 +41,7 @@
 - [SlideShare: AWSKRUG#gudi-serverless framework으로 남몰래 서비스 만들고 지워보기](https://docs.google.com/presentation/d/1yOJMKz0olbGYeiv4j4Y4fZsNqA8me2iHT2WZdmW65M0/edit?usp=sharing)
 
 ## Flowchart
-(Image from draw.io)
+// TODO: (Image from draw.io)
 
 ## References
 - Introducing serverless framework (2019.06.17 webinar)
@@ -327,15 +329,18 @@
 
 
 ### tracing plugin: X-Ray
-- 필요 없을 수도...
-
+- 참고
+  - [alex-murashkin/serverless-plugin-tracing](https://github.com/alex-murashkin/serverless-plugin-tracing)
+- 기본적인 x-ray적용은 serverless.yml의 `tracing`옵션에서 먹이면 되어서 필요가 없을 것 같다
 
 ### Dynamodb offline plugin
-  - simulating page
-
+- 참고
+  - [99xt/serverless-dynamodb-local](https://github.com/99xt/serverless-dynamodb-local)
+// TODO: 실습해서 보여주기
 
 ### pseudo-parameters plugin: CloudFormation Syntax
-
+- Fn과 Join 등의 CloudFormation 문법을 쓰는 대신 간단하게 구문을 완성할 수 있게 도와주는 플러그인
+// TODO: Webinar에서 알려주니까 그것 보고 배워
 
 ### serverless-vpc-plugin
 - [smoketurner/serverless-vpc-plugin](https://github.com/smoketurner/serverless-vpc-plugin#readme)
@@ -399,26 +404,144 @@ custom:
       - rds
 ```
 
+
 ## Resource mgmt
 - 참고
   - [Serverless Documentation: AWS - Resources](https://serverless.com/framework/docs/providers/aws/guide/resources)
+  - [Aws Lambda, Amazon Api Gateway, S3, Dynamodb And Cognito Example](https://github.com/andreivmaksimov/serverless-framework-aws-lambda-amazon-api-gateway-s3-dynamodb-and-cognito)
+    - [Serverless Framework - Building Web App Using AWS Lambda, Amazon API Gateway S3 DynamoDB And Cognito - Part-1](https://hands-on.cloud/serverless-framework-building-web-app-using-aws-lambda-amazon-api-gateway-s-3-dynamo-db-and-cognito-part-1/)
+    - [Serverless Framework - Building Web App Using AWS Lambda, Amazon API Gateway S3 DynamoDB And Cognito - Part-2](https://hands-on.cloud/serverless-framework-building-web-app-using-aws-lambda-amazon-api-gateway-s-3-dynamo-db-and-cognito-part-2/)
+
+- 최상위 계층의 `resources:` 구문으로 시작한다. 그 밑으로는 계층이 높은 순서대로 `Resources`, `{리소스명}`, `Type`/`Properties` 등으로 옵션을 채워나간다.
+  ```yaml
+  resources:  # CloudFormation template syntax
+    Resources:
+      usersTable: # resource name
+        Type: AWS::DynamoDB::Table # AWS CloudFormation Resource Reference
+        Properties:
+          TableName: usersTable
+      WriteDashPostLogGroup: # resource name
+        Type: AWS::Logs::LogGroup # AWS CloudFormation Resource Reference
+        Properties:
+          RetentionInDays: "30"
+  ```
 
 
 ### DynamoDB mgmt
+// TODO: clone해서 실습해 보기
 - 참고
   - [Serverless REST API with DynamoDB and offline support](https://github.com/serverless/examples/tree/master/aws-node-rest-api-with-dynamodb-and-offline)
-
+  ```yaml
+  resources:  # CloudFormation template syntax
+    Resources:
+      usersTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+          TableName: usersTable
+          AttributeDefinitions:
+            - AttributeName: email
+              AttributeType: S
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+  ```
 
 ### S3 bucket mgmt
-
+// TODO: clone해서 실습해 보기
+- 참고
+  - [AWS Node Signed Uploads](https://github.com/serverless/examples/tree/master/aws-node-signed-uploads)
+  - [Upload a file to S3 to trigger a lambda function](https://github.com/serverless/examples/tree/master/aws-node-upload-to-s3-and-postprocess)
+  ```yaml
+  resources:
+    Resources:
+      Uploads:
+        Type: AWS::S3::Bucket
+        Properties:
+          BucketName: ${self:custom.bucketName}
+          CorsConfiguration:
+            CorsRules:
+              - AllowedHeaders:
+                  - "Authorization"
+                AllowedMethods:
+                  - GET
+                AllowedOrigins:
+                  - "*"
+              - AllowedHeaders:
+                  - "*"
+                AllowedMethods:
+                  - PUT
+                AllowedOrigins:
+                  - "*"
+  ```
+  ```yaml
+  resources:
+    Resources:
+      WildRydesBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+          BucketName: wildrydes-andrei-maksimov
+          WebsiteConfiguration:
+            IndexDocument: index.html
+      WildRydesBucketPolicy: 
+        Type: AWS::S3::BucketPolicy
+        Properties: 
+          Bucket:
+            Ref: "WildRydesBucket"
+          PolicyDocument:
+            Statement:
+              -
+                Effect: "Allow"
+                Principal: "*"
+                Action:
+                  - "s3:GetObject"
+                Resource:
+                  Fn::Join:
+                    - ""
+                    - 
+                      - "arn:aws:s3:::"
+                      - 
+                        Ref: "WildRydesBucket"
+                      - "/*"
+  ```
 
 ### Cognito mgmt
-
+// TODO: clone해서 실습해 보기
+- 참고
+  - [Serverless AWS Cognito Custom User Pool Example](https://github.com/bsdkurt/aws-node-custom-user-pool)
+  ```yaml
+  WildRydesCognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: WildRydes
+  WildRydesCognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: WildRydesWebApp
+      GenerateSecret: false
+      UserPoolId:
+        Ref: "WildRydesCognitoUserPool"
+  ```
+  
 
 ## IAM mgmt
 - 참고
   - [Serverless Documentation: IAM](https://serverless.com/framework/docs/providers/aws/guide/iam/)
-
+### The Default IAM Role
+  - 기본적으로, 하나의 IAM Role로 모든 Lambda Function에 적용된다.
+  - 기본 VPC설정일 때, 
+  - Also by default, your Lambda functions have permission to create and write to CloudWatch logs. When VPC configuration is provided the default AWS 
+### Custom IAM
+- `role` 속성
+  - provider레벨에 `role` 속성을 주어서 customize한 IAM Role을 전역으로 설정하거나, function마다 개별적으로 `role` 속성을 줄 수도 있다
+- **주의**
+  - IAM을 Customize하면 serverless.yml 안 provider레벨의 `iamRoleStatements`들은 더이상 적용되지 않는다.
+  - 그 말은 Lambda에 대한 CloudWatch Logs 및 Stream Events 관련 권한을 직접 정의 해 주어야 한다는 것이다.
+- [예제: One Custom IAM Role For All Functions](https://serverless.com/framework/docs/providers/aws/guide/iam#one-custom-iam-role-for-all-functions)
+- [예제: Custom IAM Roles For Each Function](https://serverless.com/framework/docs/providers/aws/guide/iam#custom-iam-roles-for-each-function)
+- [예제: A Custom Default Role & Custom Function Roles](https://serverless.com/framework/docs/providers/aws/guide/iam#a-custom-default-role--custom-function-roles)
 
 ## Lambda Packaging
 - 참고
@@ -585,13 +708,13 @@ $ serverless package --package done/isaid -> `done/isaid`폴더 안에 배포 �
 - **원인**
   - 존재하지 않는 Lambda Layer 버전을 Lambda에서 참고하려고 해서 에러가 뜨는 문제였는데
 	- 실패하고 있는 Stack에서 `Resources` 탭을 누르면, 표가 나온다.
-  	- [이미지첨부]
+  	- // TODO: [이미지첨부]
 	- 나오는 표에서 `Logical ID`라고 되어 있는 부분을 유심히 본다.
-    - [이미지첨부]
+    - // TODO: [이미지첨부]
 	- 그래서 잘못된 Lambda Layer를 바라보는 Lambda Function에 해당되는 `Logical ID` 혹은 다수개의 Logical ID들을 모아서 **`콤마(,)`를 중간에 붙여** 리스트를 완성했다.
 		- Ex) FrontendRootLambdaFunction,FrontendAdminLambdaFunction
 	- 이제 상단의 `Actions`메뉴를 펼친 뒤 `Coutinue Update Rollback`을 누른다.
-  	- [이미지첨부]
+  	- // TODO: [이미지첨부]
 	- 그럼 모달창이 뜨는데, 거기서 `Advanced`를 눌러서 펼쳐본다.
-  	- [이미지첨부]
+  	- // TODO: [이미지첨부]
 	- 펼쳐서 나오는 텍스트입력란에 `Logical ID`들을 콤마로 붙인 리스트를 붙여넣고 `Continue(?였나?)` 버튼을 누르면 그에 해당하는 리소스들은 **update rollback 리스트에서 제거**되면서 `UPDATE_ROLLBACK_COMPLETE` 가 뜬 것을 확인 할 수 있었다.
