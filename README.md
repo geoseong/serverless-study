@@ -340,7 +340,10 @@
 
 ### pseudo-parameters plugin: CloudFormation Syntax
 - Fn과 Join 등의 CloudFormation 문법을 쓰는 대신 간단하게 구문을 완성할 수 있게 도와주는 플러그인
-// TODO: Webinar에서 알려주니까 그것 보고 배워
+  ```
+  $ npm install --save-dev serverless-pseudo-parameters
+  ```
+// TODO: Webinar에서 알려주니까 참고. -> https://youtu.be/LXB2Nv9ygQc?t=2717
 
 ### serverless-vpc-plugin
 - [smoketurner/serverless-vpc-plugin](https://github.com/smoketurner/serverless-vpc-plugin#readme)
@@ -538,8 +541,8 @@ custom:
   - [Serverless Documentation: IAM](https://serverless.com/framework/docs/providers/aws/guide/iam/)
 ### The Default IAM Role
   - 기본적으로, 하나의 IAM Role로 모든 Lambda Function에 적용된다.
-  - 기본 VPC설정일 때, 
-  - Also by default, your Lambda functions have permission to create and write to CloudWatch logs. When VPC configuration is provided the default AWS 
+  - Lambda Function들은 CloudWatch logs을 생성하고 작성할 권한을 가진다.
+  - VPC 구성이 제공되면 기본 AWS `AWSLambdaVPCAccessExecutionRole`이 VPC 리소스와 통신하기 위해 연결된다.
 ### Custom IAM
 - `role` 속성
   - provider레벨에 `role` 속성을 주어서 customize한 IAM Role을 전역으로 설정하거나, function마다 개별적으로 `role` 속성을 줄 수도 있다
@@ -661,6 +664,22 @@ $ serverless package --package done/isaid -> `done/isaid`폴더 안에 배포 �
 - 참고
   - [AWS FFmepg Layer & a service using it to create GIFs](https://github.com/serverless/examples/tree/master/aws-ffmpeg-layer)
   - [FooBar: Lambda Layers Test](https://github.com/mavi888/layers-test/blob/master/serverless.yml)
+- `layers` 옵션을 `serverless.yml`안에 추가한다.
+- `functions`에서 정의된 `layers`를 참고해서 사용 가능하다.
+- `layer` 옵션 참고 시 (`serverless.yml 안에서 정의된 layer 이름(맨앞에 대문자)` + `LambdaLayer`) 룰을 지켜야 한다.
+  ```yaml
+  functions:
+    mkgif:
+      handler: handler.mkgif
+      events:
+        - s3: ${self:custom.bucket}
+      layers:
+        - {Ref: FfmpegLambdaLayer}
+
+  layers:
+    ffmpeg:
+      path: layer
+  ```
 
 ## Deploying
 - 참고
