@@ -6,7 +6,7 @@
   - [Presentation](#Presentation)
   - [Flowchart](#Flowchart)
   - [References](#References)
-- [Tutorials](#Tutorials)
+- [Overview](#Overview)
   - [install Serverless Framework and Create project](#install-Serverless-Framework-and-Create-project)
   - [Variable mgmt](#Variable-mgmt)
     - [Recursively reference properties](#Recursively-reference-properties)
@@ -35,6 +35,7 @@
   - [Clearing](#Clearing)
   - [Tips](#Tips)
     - [CloudFormation: UPDATE_ROLLBACK_FAILED](#CloudFormation-UPDATEROLLBACKFAILED)
+- [HandsOn](#HandsOn)
 
 
 ## Presentation
@@ -53,7 +54,7 @@
   - [Amazon 리소스 이름(ARN) 및 AWS 서비스 네임스페이스](https://docs.aws.amazon.com/ko_kr/general/latest/gr/aws-arns-and-namespaces.html)
 
 
-# Tutorials
+# Overview
 ## install Serverless Framework and Create project
   ### Serverless framework 설치
   ```
@@ -339,11 +340,18 @@
 // TODO: 실습해서 보여주기
 
 ### pseudo-parameters plugin: CloudFormation Syntax
+- 참고
+  - [Webinar - Getting started with the serverless framework(45:17)](https://youtu.be/LXB2Nv9ygQc?t=2717)
+  - [svdgraaf/serverless-pseudo-parameters](https://github.com/svdgraaf/serverless-pseudo-parameters)
 - Fn과 Join 등의 CloudFormation 문법을 쓰는 대신 간단하게 구문을 완성할 수 있게 도와주는 플러그인
   ```
   $ npm install --save-dev serverless-pseudo-parameters
   ```
-// TODO: Webinar에서 알려주니까 참고. -> https://youtu.be/LXB2Nv9ygQc?t=2717
+  - `serverless.yml`
+    ```yaml
+    "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage}-foobar-baz"
+    ```
+
 
 ### serverless-vpc-plugin
 - [smoketurner/serverless-vpc-plugin](https://github.com/smoketurner/serverless-vpc-plugin#readme)
@@ -734,16 +742,26 @@ $ serverless package --package done/isaid -> `done/isaid`폴더 안에 배포 �
 > 문제가 되는 리소스의 Logical ID를 입력해서 무시하자
 - **문제발견**
   - `$ serverless deploy` 중에 `UPDATE_ROLLBACK_FAILED` Status가 나오는 경우 발견
+- **공지**
+  - 현재 에러 재현할 시간이 없어서 구글링에서 나오는 적절한 상황의 캡쳐만 해 놓았습니다.
+  - Lambda Layer관련 실제 시연된 캡쳐는 추후에 올리겠습니다 (_._)
 - **원인**
   - 존재하지 않는 Lambda Layer 버전을 Lambda에서 참고하려고 해서 에러가 뜨는 문제였는데
 	- 실패하고 있는 Stack에서 `Resources` 탭을 누르면, 표가 나온다.
-  	- // TODO: [이미지첨부]
-	- 나오는 표에서 `Logical ID`라고 되어 있는 부분을 유심히 본다.
-    - // TODO: [이미지첨부]
-	- 그래서 잘못된 Lambda Layer를 바라보는 Lambda Function에 해당되는 `Logical ID` 혹은 다수개의 Logical ID들을 모아서 **`콤마(,)`를 중간에 붙여** 리스트를 완성했다.
+  - 나오는 표에서 `Logical ID`라고 되어 있는 부분을 유심히 본다.
+    - <img src="https://media.amazonwebservices.com/blog/2016/cfn_reshaped_1.png" />
+	
+  - 그래서 잘못된 Lambda Layer를 바라보는 Lambda Function에 해당되는 `Logical ID` 혹은 다수개의 Logical ID들을 모아서 **`콤마(,)`를 중간에 붙여** 리스트를 완성했다.
 		- Ex) FrontendRootLambdaFunction,FrontendAdminLambdaFunction
 	- 이제 상단의 `Actions`메뉴를 펼친 뒤 `Coutinue Update Rollback`을 누른다.
-  	- // TODO: [이미지첨부]
-	- 그럼 모달창이 뜨는데, 거기서 `Advanced`를 눌러서 펼쳐본다.
-  	- // TODO: [이미지첨부]
-	- 펼쳐서 나오는 텍스트입력란에 `Logical ID`들을 콤마로 붙인 리스트를 붙여넣고 `Continue(?였나?)` 버튼을 누르면 그에 해당하는 리소스들은 **update rollback 리스트에서 제거**되면서 `UPDATE_ROLLBACK_COMPLETE` 가 뜬 것을 확인 할 수 있었다.
+  	- <img src="https://dmhnzl5mp9mj6.cloudfront.net/application-management_awsblog/images/URC-1_1_80.png" />
+	
+  - 그럼 모달창이 뜨는데, 거기서 `Advanced`를 눌러서 펼쳐본다.
+  	- <img src="https://rtfm.co.ua/wp-content/uploads/2018/06/Screenshot_20180622_103829.png" />
+  	- <img src="https://rtfm.co.ua/wp-content/uploads/2018/06/Screenshot_20180622_104330.png" />
+	
+  - 펼쳐서 나오는 텍스트입력란에 `Logical ID`들을 콤마로 붙인 리스트를 붙여넣고 `Yes, Continue Rollback` 버튼을 누르면 그에 해당하는 리소스들은 **update rollback 리스트에서 제거**되면서 `UPDATE_ROLLBACK_COMPLETE` 가 뜬 것을 확인 할 수 있었다.
+  	- <img src="https://rtfm.co.ua/wp-content/uploads/2018/06/Screenshot_20180622_104407.png" />
+
+# HandsOn
+- [Let's get it](./docs/handson.md)
