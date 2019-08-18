@@ -1,48 +1,49 @@
 # Managing AWS services with 'serverless framework'
 
 ## Table of Contents
-- [Managing AWS services with 'serverless framework'](#Managing-AWS-services-with-serverless-framework)
-  - [Table of Contents](#Table-of-Contents)
-  - [Presentation](#Presentation)
-  - [Flowchart](#Flowchart)
-  - [References](#References)
-- [Overview](#Overview)
-  - [install Serverless Framework and Create project](#install-Serverless-Framework-and-Create-project)
-  - [Variable mgmt](#Variable-mgmt)
-    - [Recursively reference properties](#Recursively-reference-properties)
-    - [Environment variable mgmt](#Environment-variable-mgmt)
-  - [Functions with Events](#Functions-with-Events)
-  - [X-Ray Tracing](#X-Ray-Tracing)
-  - [Plugins](#Plugins)
-    - [Serverless-offline plugin](#Serverless-offline-plugin)
-    - [tracing plugin: X-Ray](#tracing-plugin-X-Ray)
-    - [Dynamodb offline plugin](#Dynamodb-offline-plugin)
-    - [pseudo-parameters plugin: CloudFormation Syntax](#pseudo-parameters-plugin-CloudFormation-Syntax)
+- [Managing AWS services with 'serverless framework'](#managing-aws-services-with-serverless-framework)
+  - [Table of Contents](#table-of-contents)
+  - [Presentation](#presentation)
+  - [Flowchart](#flowchart)
+  - [References](#references)
+- [Overview](#overview)
+  - [install Serverless Framework and Create project](#install-serverless-framework-and-create-project)
+  - [Variable mgmt](#variable-mgmt)
+    - [Recursively reference properties](#recursively-reference-properties)
+    - [Environment variable mgmt](#environment-variable-mgmt)
+  - [Functions with Events](#functions-with-events)
+  - [X-Ray Tracing](#x-ray-tracing)
+  - [Plugins](#plugins)
+    - [Serverless-offline plugin](#serverless-offline-plugin)
+    - [tracing plugin: X-Ray](#tracing-plugin-x-ray)
+    - [Dynamodb offline plugin](#dynamodb-offline-plugin)
+    - [pseudo-parameters plugin: CloudFormation Syntax](#pseudo-parameters-plugin-cloudformation-syntax)
     - [serverless-vpc-plugin](#serverless-vpc-plugin)
-  - [Resource mgmt](#Resource-mgmt)
-    - [DynamoDB mgmt](#DynamoDB-mgmt)
-    - [S3 bucket mgmt](#S3-bucket-mgmt)
-    - [Cognito mgmt](#Cognito-mgmt)
-  - [IAM mgmt](#IAM-mgmt)
-    - [The Default IAM Role](#The-Default-IAM-Role)
-    - [Custom IAM](#Custom-IAM)
-  - [Lambda Packaging](#Lambda-Packaging)
-    - [CLI command](#CLI-command)
-    - [yml Configuration](#yml-Configuration)
-  - [Lambda Layers](#Lambda-Layers)
-  - [Deploying](#Deploying)
-  - [View Logging](#View-Logging)
-  - [Clearing](#Clearing)
-  - [Tips](#Tips)
-    - [CloudFormation: UPDATE_ROLLBACK_FAILED](#CloudFormation-UPDATEROLLBACKFAILED)
-- [HandsOn](#HandsOn)
+  - [Resource mgmt](#resource-mgmt)
+    - [DynamoDB mgmt](#dynamodb-mgmt)
+    - [S3 bucket mgmt](#s3-bucket-mgmt)
+    - [Cognito mgmt](#cognito-mgmt)
+  - [IAM mgmt](#iam-mgmt)
+    - [The Default IAM Role](#the-default-iam-role)
+    - [Custom IAM](#custom-iam)
+  - [Lambda Packaging](#lambda-packaging)
+    - [CLI command](#cli-command)
+    - [yml Configuration](#yml-configuration)
+  - [Lambda Layers](#lambda-layers)
+  - [Deploying](#deploying)
+  - [View Logging](#view-logging)
+  - [Clearing](#clearing)
+  - [Tips](#tips)
+    - [CloudFormation: UPDATE_ROLLBACK_FAILED](#cloudformation-updaterollbackfailed)
+- [HandsOn](#handson)
 
 
 ## Presentation
 - [SlideShare: AWSKRUG#gudi-serverless framework으로 남몰래 서비스 만들고 지워보기](https://docs.google.com/presentation/d/1yOJMKz0olbGYeiv4j4Y4fZsNqA8me2iHT2WZdmW65M0/edit?usp=sharing)
 
 ## Flowchart
-// TODO: (Image from draw.io)
+
+  <img src="https://hands-on.cloud/static/a49379cbfb3e9f4c99df6985f827a7f5/f4848/Serverless-framework-Building-Web-App-using-AWS-Lambda-Amazon-API-Gateway-S3-DynamoDB-and-Cognito.png" alt="Building Web App Using AWS Lambda, Amazon API Gateway, S3, DynamoDB and Cognito" style="margin-left: 2rem;">
 
 ## References
 - Introducing serverless framework (2019.06.17 webinar)
@@ -52,7 +53,6 @@
   - [Serverless Framework with Node.js](docs/serverless_framework.md)
 - AWS ARN & NAMESPACE
   - [Amazon 리소스 이름(ARN) 및 AWS 서비스 네임스페이스](https://docs.aws.amazon.com/ko_kr/general/latest/gr/aws-arns-and-namespaces.html)
-
 
 # Overview
 ## install Serverless Framework and Create project
