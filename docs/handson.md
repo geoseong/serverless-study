@@ -203,12 +203,15 @@
 
 - 회원관리를 위한 `AWS Cognito User Pool`을 생성
   - `serverless.yml` -> `resources:` -> `Resources:`에 아래 섹션을 추가하고 배포한다.
+  - 아래 추가할 Cognito `Type`과 `Properties`는 CloudFormation 문법인데, `AutoVerifiedAttributes: ['email']` 속성을 넣어 주어야지만 호스팅 페이지에서 회원가입 시 인증코드가 이메일로 보내는 것이 가능하다.
+    - 참고문서: [`CloudFormation -> AWS::Cognito::UserPool`](https://docs.aws.amazon.com/ko_kr/AWSCloudFormation/latest/UserGuide/aws-resource-cognito-userpool.html#cfn-cognito-userpool-autoverifiedattributes)
 
     ```yaml
     GudiSlsUserPool:
       Type: AWS::Cognito::UserPool
       Properties:
         UserPoolName: GudiSls
+        AutoVerifiedAttributes: ['email']
     ```
 
     ```sh
@@ -286,21 +289,6 @@
   ```sh
   aws s3 cp s3://
   ```
-<!-- 
-  - 프로젝트 폴더 안에서 `config.js`파일을 만든 뒤 아래 템플릿 안에 자신이 만든 `userPoolId`와 `userPoolClientId`를 채워 넣는다.
-  
-    ```js
-    window._config = {
-      cognito: {
-        userPoolId: '',
-        userPoolClientId: '',
-        region: 'ap-northeast-2'
-      },
-      api: {
-        invokeUrl: '',
-      }
-    }
-    ``` -->
 
   - `config.js`에 `userPoolId`와 `userPoolClientId`를 다 채워 넣었다면, 업로드한 호스팅 버킷 안의 `js/config.js` 경로에 현재 `config.js`을 업로드한다.
     - 로컬환경에 단일 프로필만 존재한다면...  
@@ -317,3 +305,34 @@
       # [AWS프로필명]: OSX(~/.aws/credentials), Windows(`%UserProfile%\.aws/credentials`)
       $ aws s3 cp ./config.js s3://gudi-serverless-handson-[내이름]/js/config.js --profile [AWS프로필명]
       ```
+
+- 회원가입 프로세스 확인하기
+  - 이제 호스팅 된 페이지를 들어가서 가장 먼저 보이는 화면의 `Giddy Up!` 버튼을 누르면 `Register 페이지`가 나오는데, 한번 회원가입 프로세스를 진행해 본다.
+  
+  > 패스워드는 특수문자, 영문 대문자 포함 6글자 이상이여야 한다. 만약 이 policy를 충족 못한다면 alert로 안내문이 알아서 나올 것이다
+  
+  <img src="https://hands-on.cloud/static/a233232d7a5bd927ad19c1ca2e397ddf/1094d/Serverless-Framework-Cognito-User-Pool-Client-Testing-Registration.png" alt="uploaded s3 static hosting site's register page" />
+
+  - 회원가입할 이메일주소와 패스워드 입력 수 `Let's ryde`버튼을 누르면 입력된 이메일 주소로 인증코드가 날라가며, 페이지는 `ride.html` 로 이동이 되어 있을 것이다.
+  <img width="937" alt="001_wildryde_verify" src="https://user-images.githubusercontent.com/19166187/63220571-8ecc9100-c1c5-11e9-8c2d-fb4e1e30d322.png">
+
+  - 인증코드가 정상적으로 입력되면 Signin을 한다.
+  <img width="905" alt="002_wildryde_signin" src="https://user-images.githubusercontent.com/19166187/63220572-8f652780-c1c5-11e9-8ef4-0b42c366ef93.png">
+  
+  - 정상적으로 로그인 된 이후 화면.
+  <img width="919" alt="003_wildryde_signedin" src="https://user-images.githubusercontent.com/19166187/63220573-8f652780-c1c5-11e9-8c42-574965110c65.png">
+
+Serverless service backend
+- Create AWS DynamoDB table
+- Create IAM role for Lambda runction
+- Create Lambda function for handling requests
+- Validate your implementation
+
+Restful APIs
+- Create new REST API
+- Create Cognito user pools authorizer
+- Create new resource and method
+- Create your API deployment
+- Global stage declaration
+- Updating website config
+- Validate your implementation
