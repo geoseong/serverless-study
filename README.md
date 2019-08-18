@@ -337,7 +337,6 @@
 ### Dynamodb offline plugin
 - 참고
   - [99xt/serverless-dynamodb-local](https://github.com/99xt/serverless-dynamodb-local)
-// TODO: 실습해서 보여주기
 
 ### pseudo-parameters plugin: CloudFormation Syntax
 - 참고
@@ -355,7 +354,6 @@
 
 ### serverless-vpc-plugin
 - [smoketurner/serverless-vpc-plugin](https://github.com/smoketurner/serverless-vpc-plugin#readme)
-- // TODO: 다른 functions, Resources와 함께 구성 시 deploy할 때마다 VPC를 새로 만드는 지 확인을 해 볼 것
 ```yaml
 # add in your serverless.yml
 
@@ -439,7 +437,6 @@ custom:
 
 
 ### DynamoDB mgmt
-// TODO: clone해서 실습해 보기
 - 참고
   - [Serverless REST API with DynamoDB and offline support](https://github.com/serverless/examples/tree/master/aws-node-rest-api-with-dynamodb-and-offline)
   ```yaml
@@ -465,7 +462,6 @@ custom:
   ```
 
 ### S3 bucket mgmt
-// TODO: clone해서 실습해 보기
 - 참고
   - [AWS Node Signed Uploads](https://github.com/serverless/examples/tree/master/aws-node-signed-uploads)
   - [Upload a file to S3 to trigger a lambda function](https://github.com/serverless/examples/tree/master/aws-node-upload-to-s3-and-postprocess)
@@ -523,7 +519,6 @@ custom:
   ```
 
 ### Cognito mgmt
-// TODO: clone해서 실습해 보기
 - 참고
   - [Serverless AWS Cognito Custom User Pool Example](https://github.com/bsdkurt/aws-node-custom-user-pool)
   - [Aws Lambda, Amazon Api Gateway, S3, Dynamodb And Cognito Example](https://github.com/andreivmaksimov/serverless-framework-aws-lambda-amazon-api-gateway-s3-dynamodb-and-cognito)
@@ -668,7 +663,6 @@ $ serverless package --package done/isaid -> `done/isaid`폴더 안에 배포 �
     - Lambda의 코드 파일들은 `/var/task` 폴더 안에 저장되어 있음.
 
 ## Lambda Layers
-// TODO: clone받아 실습하기
 - 참고
   - [AWS FFmepg Layer & a service using it to create GIFs](https://github.com/serverless/examples/tree/master/aws-ffmpeg-layer)
   - [FooBar: Lambda Layers Test](https://github.com/mavi888/layers-test/blob/master/serverless.yml)
