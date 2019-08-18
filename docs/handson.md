@@ -6,6 +6,15 @@
   - [Upload static content](#upload-static-content)
   - [Enable static website hosting](#enable-static-website-hosting)
   - [User management](#user-management)
+  - [Create Backend Services](#create-backend-services)
+    - [Create AWS DynamoDB table](#create-aws-dynamodb-table)
+    - [Create IAM role for Lambda runction](#create-iam-role-for-lambda-runction)
+    - [Create Lambda function for handling requests](#create-lambda-function-for-handling-requests)
+    - [API Gateway: Create new REST API](#api-gateway-create-new-rest-api)
+    - [Create Cognito user pools authorizer](#create-cognito-user-pools-authorizer)
+  - [Configuring invokeUrl](#configuring-invokeurl)
+  - [Testing](#testing)
+  - [Resource Cleanup](#resource-cleanup)
 
 ## Reference
 
@@ -286,10 +295,6 @@
       $ aws s3 cp s3://gudi-serverless-handson-[내이름]/js/config.js ./ --profile [AWS프로필명]
       ```
 
-  ```sh
-  aws s3 cp s3://
-  ```
-
   - `config.js`에 `userPoolId`와 `userPoolClientId`를 다 채워 넣었다면, 업로드한 호스팅 버킷 안의 `js/config.js` 경로에 현재 `config.js`을 업로드한다.
     - 로컬환경에 단일 프로필만 존재한다면...  
 
@@ -321,6 +326,298 @@
   
   - 정상적으로 로그인 된 이후 화면.
   <img width="919" alt="003_wildryde_signedin" src="https://user-images.githubusercontent.com/19166187/63220573-8f652780-c1c5-11e9-8c42-574965110c65.png">
+
+## Create Backend Services
+
+### Create AWS DynamoDB table
+
+- `resources` 섹션에서 DynamoDB 테이블을 정의하고 배포하여 DynamoDB 테이블을 생성해 본다.
+- `serverless.yml`파일의 `resources:` -> `Resources:` 섹션에 아래 속성을 추가한다.
+
+  ```yaml
+  resources:
+    Resources:
+      ...
+      WildRydesDynamoDBTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+          TableName: Rides
+          AttributeDefinitions:
+            - AttributeName: RideId
+              AttributeType: S
+          KeySchema:
+            - AttributeName: RideId
+              KeyType: HASH
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+  ```
+
+  - Stack Outputs에 DynamoDB의 ARN을 보이게 할 수 있게 `Outputs:` 섹션에 아래 속성을 추가 후 배포한다
+
+    ```yaml
+    Outputs:
+      ...
+      WildRydesDynamoDbARN:
+        Description: 'Wild Rydes DynamoDB ARN'
+        Value:
+          'Fn::GetAtt': [WildRydesDynamoDBTable, Arn]
+    ```
+
+  ```sh
+  # DynamoDB에 'Rides' 테이블이 생성되었나 확인해 볼 것
+  $ npm run deploy
+
+  Stack Outputs
+  WildRydesDynamoDbARN: arn:aws:dynamodb:ap-northeast-2:623542739657:table/Rides
+  ```
+
+### Create IAM role for Lambda runction
+
+- 기본적으로 serverless.yml에서 만들어진 `Lambda Function`은 **CloudWatch**의 `logs:CreateLogStream`, `logs:PutLogEvents` Action을 가진 Role이 자동으로 설정되어 있다.
+- Lambda Function에 커스터마이징 된 Role을 부여하는 것도 가능한데, 이 역시 `resources:` -> `Resources:` 섹션에서 정의 가능하다.
+  > 커스터마이징 된 Role을 Lambda에 부여하게 되면 기존에 기본 설정되어 있던 IAM Role의 효력은 사라진다.
+- `serverless.yml` -> `resources:` -> `Resources:` 섹션에 아래 속성을 추가 후 배포한다.
+
+  ```yaml
+  WildRydesLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: WildRydesLambda
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: DynamoDBWriteAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                      - ':'
+                      - - 'arn:aws:logs'
+                        - Ref: 'AWS::Region'
+                        - Ref: 'AWS::AccountId'
+                        - 'log-group:/aws/lambda/*:*:*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource:
+                  'Fn::GetAtt': [WildRydesDynamoDBTable, Arn]
+  ```
+
+  ```sh
+  # Created new IAM role
+  $ npm run deploy
+  ```
+
+### Create Lambda function for handling requests
+
+- DynamoDB에 접근하여 조작 가능한 Lambda Function을 만든다.
+- `serverless.yml`에서 항상 접하던 `resources:`섹션을 벗어나, 가장 상위 계층에다가 `functions:` 섹션을 아래처럼 추가해 준다.
+  > 기존에 존재하던 `functions:` 섹션을 대체하는 것이다.
+
+  ```yaml
+  functions:
+    RequestUnicorn:
+      handler: handler.handler
+      role: WildRydesLambdaRole
+  ```
+
+- 이후의 `handler.js` 의 코드는 아래 코드 샘플을 복붙하고 배포한다.
+  - [`requestUnicorn.js](https://github.com/awslabs/aws-serverless-workshops/blob/master/WebApplication/3_ServerlessBackend/requestUnicorn.js)
+
+  ```sh
+  # Deploy Lambda function
+  $ npm run deploy
+  ```
+
+- 배포 후 Lambda function (`wild-rides-serverless-demo-dev-RequestUnicorn`) 을 들어가서 DynamoDB, CloudWatch Role이 잘 부여되었는 지 확인할 것.
+
+  <img src="https://hands-on.cloud/static/00a0d7e2e619f7d7d910b13be3a78c3e/1094d/Serverless-Framework-Lambda-Function-Details.png">
+
+- Lambda Function (`wild-rides-serverless-demo-dev-RequestUnicorn`) 화면 우측상단의 `Test` 버튼을 눌러서 `Event Name`에 임의의 영문 이름을 넣고, 아래 테스트 파라미터를 넣어서 `Create` 버튼을 눌러 테스트 이벤트를 만든다.
+  <img src="https://hands-on.cloud/static/e3d32e882df29c2dc0803d3e855ec56e/1094d/Serverless-Framework-Lambda-Function-Testing.png">
+
+  ```json
+  {
+    "path": "/ride",
+    "httpMethod": "POST",
+    "headers": {
+      "Accept": "*/*",
+      "Authorization": "eyJraWQiOiJLTzRVMWZs",
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "queryStringParameters": null,
+    "pathParameters": null,
+    "requestContext": {
+      "authorizer": {
+        "claims": {
+          "cognito:username": "the_username"
+        }
+      }
+    },
+    "body": "{\"PickupLocation\":{\"Latitude\":47.6174755835663,\"Longitude\":-122.28837066650185}}"
+  }
+  ```
+
+  - 이후 우측 상단의 `Test`버튼 옆에 방금 생성한 이벤트명이 선택되어 있는 지 확인 후 `Test`버튼을 눌러서 결과를 확인해 본다.
+
+  <img src="https://hands-on.cloud/static/831e9cb330f6288f4584e3ed5333677e/1094d/Serverless-Framework-Lambda-Function-Testing-Results.png">
+
+### API Gateway: Create new REST API
+
+- `serverless.yml`에서 방금 생성한 `functions:`의 Function 안에다가 `events:` 섹션을 넣고 배포한다.
+- `events:`의 `http`속성이 `API Gateway`를 담당하는 속성이다.
+
+  ```yaml
+  functions:
+    RequestUnicorn:
+      handler: handler.handler
+      role: WildRydesLambdaRole
+      events:
+        - http:
+            path: ride
+            method: post
+            cors: true  # <- CORS(Cross-Origin Resource Sharing) Configuration Default
+  ```
+
+  ```sh
+  # Deploy API Gateway connecting Lambda
+  $ npm run deploy
+  ```
+
+### Create Cognito user pools authorizer
+
+- API Gateway는 Cognito User Pools로부터 리턴되는 JWT토큰을 활용하여 API 요청을 인증할 수가 있는데,
+- 이러한 인증프로세스를 만들기 위해서는 `serverless.yml` -> `resources:` -> `Resources:` 섹션에 아래 속성들을 추가하고 배포하면 된다.
+  - **`ApiGatewayRestApi`**
+    - `RestApiId:` -> `Ref:`의 `ApiGatewayRestApi`는 `serverless.yml`에 정의가 되지는 않았지만, **serverless framework**가 `serverless.yml`파일을 CloudFormation 템플릿으로 변환하는 과정에서 자동으로 `ApiGatewayRestApi`가 정의되기 때문이다.
+
+  ```yaml
+  WildRydesApiGatewayAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      Name: WildRydes
+      RestApiId:
+        Ref: ApiGatewayRestApi
+      Type: COGNITO_USER_POOLS
+      ProviderARNs:
+        - Fn::GetAtt: [GudiSlsUserPool, Arn]
+      IdentitySource: method.request.header.Authorization
+  ```
+
+- 위에 정의된 `WildRydesApiGatewayAuthorizer`를 배포된 `functions:`에 추가하도록 한다.
+
+  ```yaml
+  functions:
+    RequestUnicorn:
+      handler: handler.handler
+      role: WildRydesLambdaRole
+      events:
+        - http:
+            path: ride
+            method: post
+            cors: true
+            authorizer:
+              type: COGNITO_USER_POOLS
+              authorizerId:
+                Ref: WildRydesApiGatewayAuthorizer
+  ```
+
+  ```sh
+  # Deploy API Gateway connecting Lambda and Authorizer using Cognito user pool's JWT token
+  $ npm run deploy
+
+  Stack Outputs
+  ServiceEndpoint: https://aquhbndu5d.execute-api.ap-northeast-2.amazonaws.com/dev
+  ```
+
+  <img src="">
+
+## Configuring invokeUrl
+
+- 이제 백엔드 세팅은 다 마무리가 되었다.
+- 백엔드 세팅할때 API Gateway의 endpoint를 호스팅한 버킷 안의 `js/config.js` 에다가 넣고 재업로드 한다.
+
+  ```js
+  window._config = {
+    cognito: {
+      userPoolId: '{Stack Outputs의 GudiSlsUserPoolId}', // e.g. us-east-2_uXboG5pAb
+      userPoolClientId: '{Stack Outputs의 GudiSlsUserPoolClientId}', // e.g. 25ddkmj4v6hfsfvruhpfi7n4hv
+      region: 'ap-northeast-2', // e.g. us-east-2
+    },
+    api: {
+      invokeUrl: '{Stack Outputs의 ServiceEndpoint}', // e.g. https://rc7nyt4tql.execute-api.us-west-2.amazonaws.com/prod',
+    },
+  };
+  ```
+
+  - 업로드된 호스팅 버킷의 js/config.js에 재업로드
+    - 로컬환경에 단일 프로필만 존재한다면...
+
+      ```sh
+      # 업로드된 호스팅 버킷의 js/config.js에 재업로드
+
+      $ aws s3 cp ./config.js s3://gudi-serverless-handson-[내이름]/js/config.js
+      ```
+
+    - 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...
+
+      ```sh
+      # 업로드된 호스팅 버킷의 js/config.js에 재업로드
+      # [AWS프로필명]: OSX(~/.aws/credentials), Windows(`%UserProfile%\.aws/credentials`)
+
+      $ aws s3 cp ./config.js s3://gudi-serverless-handson-[내이름]/js/config.js --profile [AWS프로필명]
+      ```
+
+## Testing
+
+- 이제 `Stack Outputs`에 있는 `GudiSlsStorageURL:`의 url을 들어가서 호스팅 된 페이지를 들어간다
+- `Giddy Up!` 버튼으로 회원가입(Register)
+  - 이메일 인증코드 발송 정상확인
+  - 인증코드 입력 후 정상가입 되었는 지 확인
+- `/ride.html` 에 들어가서 지도가 잘 뜨는지 확인
+- 지도에서 유니콘을 픽업할 아무 곳을 선택 후 `Request Unicorn`버튼을 클릭하여 페이지 우측상단에 알람 확인
+
+  ```md
+  Rocinante, your Yellow unicorn, is on her way
+  ```
+
+- 그와 동시에 유니콘이 내가 지정한 곳에 잘 날아오는 지 확인
+- 우측상단의 `Account` -> `Sign out`버튼 하여 sign out이 잘 되는 지 확인
+
+## Resource Cleanup
+
+- serverless framework으로 생성된 프로젝트는 CloudFormation으로 모든 Resource가 생성되었으므로, `serverless remove (sls remove)` 명령만 입력하면 관련 Resource를 일괄 삭제 가능하다.
+- 그렇지만 전제조건이 있다면, 배포된 S3 bucket안의 내용물은 비워진 이후에 완벽한 Cleanup이 가능하므로 주의할 것.
+
+  - 로컬환경에 단일 프로필만 존재한다면...
+
+    ```sh
+    # CloudFormation에서 'wild-rides-serverless-demo' 스택이 없어졌나 확인할 것
+    $ aws s3 rm s3://gudi-serverless-handson-[내이름] --recursive
+    $ sls remove --verbose
+    ```
+
+  - 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...
+
+    ```sh
+    # CloudFormation에서 'wild-rides-serverless-demo' 스택이 없어졌나 확인할 것
+    # [AWS프로필명]: OSX(~/.aws/credentials), Windows(`%UserProfile%\.aws/credentials`)
+    $ aws s3 rm s3://gudi-serverless-handson-[내이름] --recursive --profile [AWS프로필명]
+    $ sls remove --aws-profile [AWS프로필명] --verbose
+    ```
 
 Serverless service backend
 - Create AWS DynamoDB table
