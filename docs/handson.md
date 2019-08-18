@@ -283,17 +283,32 @@
     - (택1: 로컬환경에 단일 프로필만 존재한다면...  )
 
       ```sh
-      # 잘 업로드 되었는지 확인
+      # Download config.js
       $ aws s3 cp s3://gudi-serverless-handson-[내이름]/js/config.js ./
       ```
 
     - (택1: 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...)
 
       ```sh
-      # 잘 업로드 되었는지 확인
+      # Download config.js
       # [AWS프로필명]: OSX(~/.aws/credentials), Windows(`%UserProfile%\.aws/credentials`)
       $ aws s3 cp s3://gudi-serverless-handson-[내이름]/js/config.js ./ --profile [AWS프로필명]
       ```
+
+  - config.js
+
+    ```js
+    window._config = {
+      cognito: {
+        userPoolId: '{Stack Outputs의 GudiSlsUserPoolId}', // e.g. us-east-2_uXboG5pAb
+        userPoolClientId: '{Stack Outputs의 GudiSlsUserPoolClientId}', // e.g. 25ddkmj4v6hfsfvruhpfi7n4hv
+        region: 'ap-northeast-2', // e.g. us-east-2
+      },
+      api: {
+        invokeUrl: '', // e.g. https://rc7nyt4tql.execute-api.us-west-2.amazonaws.com/prod',
+      },
+    };
+    ```
 
   - `config.js`에 `userPoolId`와 `userPoolClientId`를 다 채워 넣었다면, 업로드한 호스팅 버킷 안의 `js/config.js` 경로에 현재 `config.js`을 업로드한다.
     - (택1: 로컬환경에 단일 프로필만 존재한다면...  )
