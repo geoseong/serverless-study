@@ -61,14 +61,14 @@
 
 - S3 bucket 배포
 
-  - 로컬환경에 단일 프로필만 존재한다면...
+  - (택1: 로컬환경에 단일 프로필만 존재한다면...)
   
     ```sh
     # create s3 bucket
     $ sls deploy --verbose
     ```
 
-  - 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...
+  - (택1: 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...)
 
     ```sh
     # create s3 bucket
@@ -87,7 +87,7 @@
 
 - 내가 배포했던 S3 Bucket에다가 `WebApplication/1_StaticWebHosting/website` 폴더만 업로드한다
   
-  - 로컬환경에 단일 프로필만 존재한다면...
+  - (택1: 로컬환경에 단일 프로필만 존재한다면...)
 
     ```sh
     # 나의 bucket에 파일 업로드. 업로드 잘 되었는지 확인할 것
@@ -95,7 +95,7 @@
     $ aws s3 sync ./aws-serverless-workshops/WebApplication/1_StaticWebHosting/website s3://gudi-serverless-handson-[내이름]
     ```
 
-  - 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...
+  - (택1: 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...)
 
     ```sh
     # 나의 bucket에 파일 업로드. 업로드 잘 되었는지 확인할 것
@@ -132,7 +132,7 @@
   ```
 
 - 배포하기 전에 자주 사용하는 스크립트들은 package.json에 미리 작성해 놓도록 하자
-  - 로컬환경에 단일 프로필만 존재한다면...
+  - (택1: 로컬환경에 단일 프로필만 존재한다면...)
 
     ```json
     {
@@ -151,7 +151,7 @@
     }
     ```
 
-  - 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...
+  - (택1: 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...)
 
     ```json
       {
@@ -280,14 +280,14 @@
 
 - 업로드된 웹사이트에서 이용하게 될 backend 정보인 `config.js` 파일 다운로드 후 내용 수정하여 업로드하기
   - 업로드 한 호스팅 페이지 버킷에서 js/config.js 를 다운로드 한 뒤, 자신이 만든 `userPoolId`와 `userPoolClientId`를 채워 넣는다.
-    - 로컬환경에 단일 프로필만 존재한다면...  
+    - (택1: 로컬환경에 단일 프로필만 존재한다면...  )
 
       ```sh
       # 잘 업로드 되었는지 확인
       $ aws s3 cp s3://gudi-serverless-handson-[내이름]/js/config.js ./
       ```
 
-    - 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...
+    - (택1: 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...)
 
       ```sh
       # 잘 업로드 되었는지 확인
@@ -296,14 +296,14 @@
       ```
 
   - `config.js`에 `userPoolId`와 `userPoolClientId`를 다 채워 넣었다면, 업로드한 호스팅 버킷 안의 `js/config.js` 경로에 현재 `config.js`을 업로드한다.
-    - 로컬환경에 단일 프로필만 존재한다면...  
+    - (택1: 로컬환경에 단일 프로필만 존재한다면...  )
 
       ```sh
       # 잘 업로드 되었는지 확인
       $ aws s3 cp ./config.js s3://gudi-serverless-handson-[내이름]/js/config.js
       ```
 
-    - 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...
+    - (택1: 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...)
 
       ```sh
       # 잘 업로드 되었는지 확인
@@ -564,7 +564,7 @@
   ```
 
   - 업로드된 호스팅 버킷의 js/config.js에 재업로드
-    - 로컬환경에 단일 프로필만 존재한다면...
+    - (택1: 로컬환경에 단일 프로필만 존재한다면...)
 
       ```sh
       # 업로드된 호스팅 버킷의 js/config.js에 재업로드
@@ -572,7 +572,7 @@
       $ aws s3 cp ./config.js s3://gudi-serverless-handson-[내이름]/js/config.js
       ```
 
-    - 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...
+    - (택1: 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...)
 
       ```sh
       # 업로드된 호스팅 버킷의 js/config.js에 재업로드
@@ -602,7 +602,7 @@
 - serverless framework으로 생성된 프로젝트는 CloudFormation으로 모든 Resource가 생성되었으므로, `serverless remove (sls remove)` 명령만 입력하면 관련 Resource를 일괄 삭제 가능하다.
 - 그렇지만 전제조건이 있다면, 배포된 S3 bucket안의 내용물은 비워진 이후에 완벽한 Cleanup이 가능하므로 주의할 것.
 
-  - 로컬환경에 단일 프로필만 존재한다면...
+  - (택1: 로컬환경에 단일 프로필만 존재한다면...)
 
     ```sh
     # CloudFormation에서 'wild-rides-serverless-demo' 스택이 없어졌나 확인할 것
@@ -610,7 +610,7 @@
     $ sls remove --verbose
     ```
 
-  - 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...
+  - (택1: 로컬환경에 다수개의 aws profile이 있고, default가 아닌 다른 profile에 적용하고자 한다면...)
 
     ```sh
     # CloudFormation에서 'wild-rides-serverless-demo' 스택이 없어졌나 확인할 것
@@ -618,18 +618,3 @@
     $ aws s3 rm s3://gudi-serverless-handson-[내이름] --recursive --profile [AWS프로필명]
     $ sls remove --aws-profile [AWS프로필명] --verbose
     ```
-
-Serverless service backend
-- Create AWS DynamoDB table
-- Create IAM role for Lambda runction
-- Create Lambda function for handling requests
-- Validate your implementation
-
-Restful APIs
-- Create new REST API
-- Create Cognito user pools authorizer
-- Create new resource and method
-- Create your API deployment
-- Global stage declaration
-- Updating website config
-- Validate your implementation
