@@ -39,7 +39,7 @@
 
 
 ## Presentation
-- [SlideShare: AWSKRUG#gudi-serverless framework으로 남몰래 서비스 만들고 지워보기](https://docs.google.com/presentation/d/1yOJMKz0olbGYeiv4j4Y4fZsNqA8me2iHT2WZdmW65M0/edit?usp=sharing)
+- [SlideShare: AWSKRUG#gudi-serverless framework으로 남몰래 서비스 만들고 지워보기](https://www.slideshare.net/TaeSeongPark2/awskrug-serverless-framework)
 
 ## Flowchart
 
