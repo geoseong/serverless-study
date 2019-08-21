@@ -8,7 +8,7 @@
   - [User management](#user-management)
   - [Create Backend Services](#create-backend-services)
     - [Create AWS DynamoDB table](#create-aws-dynamodb-table)
-    - [Create IAM role for Lambda runction](#create-iam-role-for-lambda-runction)
+    - [Create IAM role for Lambda function](#create-iam-role-for-lambda-function)
     - [Create Lambda function for handling requests](#create-lambda-function-for-handling-requests)
     - [API Gateway: Create new REST API](#api-gateway-create-new-rest-api)
     - [Create Cognito user pools authorizer](#create-cognito-user-pools-authorizer)
@@ -230,8 +230,8 @@
     ```
 
 - App client 생성
+  - App Client는 미인증 API(인증된 사용자가 없는 API)를 호출할 수 있게 해 주는, 주로 **등록, 로그인 및 잊어버린 암호 처리를 위한** 기능을 할 때 사용한다. `OAuth 2.0`과 연계하여 사용도 가능하다.
   - 마찬가지로 `serverless.yml` -> `resources:` -> `Resources:`에 아래 섹션을 추가하고 배포한다.
-  > Author: "I do not understand, why they call it App Client in web console"
 
     ```yaml
     GudiSlsUserPoolClient:
@@ -305,7 +305,7 @@
         region: 'ap-northeast-2', // e.g. us-east-2
       },
       api: {
-        invokeUrl: '', // e.g. https://rc7nyt4tql.execute-api.us-west-2.amazonaws.com/prod',
+        invokeUrl: '', // 다음 챕터에서 채워 넣을 것이므로 공란으로 냅둔다.
       },
     };
     ```
@@ -387,7 +387,7 @@
   WildRydesDynamoDbARN: arn:aws:dynamodb:ap-northeast-2:623542739657:table/Rides
   ```
 
-### Create IAM role for Lambda runction
+### Create IAM role for Lambda function
 
 - 기본적으로 serverless.yml에서 만들어진 `Lambda Function`은 **CloudWatch**의 `logs:CreateLogStream`, `logs:PutLogEvents` Action을 가진 Role이 자동으로 설정되어 있다.
 - Lambda Function에 커스터마이징 된 Role을 부여하는 것도 가능한데, 이 역시 `resources:` -> `Resources:` 섹션에서 정의 가능하다.
